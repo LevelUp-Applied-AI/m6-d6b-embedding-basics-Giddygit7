@@ -13,7 +13,20 @@ def load_glove(filepath):
 
     Returns a dict mapping each word to a numpy array of shape (50,).
     """
-    pass
+    embeddings = {}
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            for line in f:
+                parts = line.strip().split()
+                if not parts:
+                    continue
+                word = parts[0]
+                # Convert the remaining strings to a 50-dimensional float array
+                vector = np.array(parts[1:], dtype=np.float32)
+                embeddings[word] = vector
+    except FileNotFoundError:
+        print(f"Error: The file {filepath} was not found.")
+    return embeddings
 
 
 def cosine_similarity(vec1, vec2):
@@ -21,7 +34,14 @@ def cosine_similarity(vec1, vec2):
 
     Returns a float in [-1, 1]. If either vector has zero norm, return 0.0.
     """
-    pass
+    norm1 = np.linalg.norm(vec1)
+    norm2 = np.linalg.norm(vec2)
+
+    # Handle the zero-vector edge case to avoid division by zero
+    if norm1 == 0 or norm2 == 0:
+        return 0.0
+
+    return np.dot(vec1, vec2) / (norm1 * norm2)
 
 
 def nearest_neighbors(word, embeddings, n=5):
@@ -30,7 +50,24 @@ def nearest_neighbors(word, embeddings, n=5):
     Returns a list of (word, score) tuples sorted by similarity descending,
     excluding the query word itself.
     """
-    pass
+    if word not in embeddings:
+        return []
+
+    query_vec = embeddings[word]
+    results = []
+
+    for target_word, target_vec in embeddings.items():
+        # Exclude the query word itself
+        if target_word == word:
+            continue
+        
+        sim = cosine_similarity(query_vec, target_vec)
+        results.append((target_word, sim))
+
+    # Sort by similarity score in descending order
+    results.sort(key=lambda x: x[1], reverse=True)
+
+    return results[:n]
 
 
 if __name__ == "__main__":
